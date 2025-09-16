@@ -20,8 +20,8 @@ class McpServerSandboxManager {
 
   private socketPath: string | null = null;
 
-  onSandboxStartupSuccess: () => void = () => {};
-  onSandboxStartupError: (error: Error) => void = () => {};
+  onSandboxStartupSuccess: () => void = () => { };
+  onSandboxStartupError: (error: Error) => void = () => { };
 
   constructor() {
     this.podmanRuntime = new PodmanRuntime(
@@ -47,9 +47,9 @@ class McpServerSandboxManager {
       log.info('Socket path has been updated in libpod client');
 
       // Now pull the base image with the correct socket configured
-      log.info('Pulling base image...');
-      await this.podmanRuntime.pullBaseImageOnMachineInstallationSuccess(socketPath);
-      log.info('Base image pulled successfully');
+      log.info('Ensuring base image is available...');
+      await this.podmanRuntime.ensureBaseImageAvailableOnMachineInstallationSuccess(socketPath);
+      log.info('Base image is available');
     } catch (error) {
       log.error('Failed during podman setup:', error);
       this.onPodmanMachineInstallationError(error as Error);
