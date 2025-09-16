@@ -108,8 +108,8 @@ export default class PodmanRuntime {
   private machineStartupMessage: string | null = null;
   private machineStartupError: string | null = null;
 
-  private onMachineInstallationSuccess: () => void = () => {};
-  private onMachineInstallationError: (error: Error) => void = () => {};
+  private onMachineInstallationSuccess: () => void = () => { };
+  private onMachineInstallationError: (error: Error) => void = () => { };
 
   private registryAuthFilePath: string;
   private binaryPath = getBinaryExecPath('podman-remote-static-v5.5.2');
@@ -157,6 +157,14 @@ export default class PodmanRuntime {
       await this.baseImage.pullBaseImage(machineSocketPath);
     } catch (error) {
       throw error; // Re-throw to be handled by caller
+    }
+  }
+
+  async ensureBaseImageAvailableOnMachineInstallationSuccess(machineSocketPath: string) {
+    try {
+      await this.baseImage.ensureBaseImageAvailable(machineSocketPath);
+    } catch (error) {
+      throw error;
     }
   }
 
