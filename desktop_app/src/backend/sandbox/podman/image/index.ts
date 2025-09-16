@@ -38,7 +38,8 @@ export default class PodmanImage {
         },
       });
 
-      if (response.error) {
+      // Check for HTTP status code indicating success (200)
+      if (response.status && response.status !== 200) {
         return false;
       }
       return true;
