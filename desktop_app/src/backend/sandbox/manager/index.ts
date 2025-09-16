@@ -20,8 +20,8 @@ class McpServerSandboxManager {
 
   private socketPath: string | null = null;
 
-  onSandboxStartupSuccess: () => void = () => { };
-  onSandboxStartupError: (error: Error) => void = () => { };
+  onSandboxStartupSuccess: () => void = () => {};
+  onSandboxStartupError: (error: Error) => void = () => {};
 
   constructor() {
     this.podmanRuntime = new PodmanRuntime(
