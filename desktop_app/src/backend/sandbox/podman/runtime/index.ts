@@ -153,14 +153,6 @@ export default class PodmanRuntime {
   }
 
   async pullBaseImageOnMachineInstallationSuccess(machineSocketPath: string) {
-    try {
-      await this.baseImage.pullBaseImage(machineSocketPath);
-    } catch (error) {
-      throw error; // Re-throw to be handled by caller
-    }
-  }
-
-  async ensureBaseImageAvailableOnMachineInstallationSuccess(machineSocketPath: string) {
     await this.baseImage.ensureBaseImageAvailable(machineSocketPath);
   }
 

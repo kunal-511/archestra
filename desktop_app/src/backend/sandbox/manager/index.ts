@@ -48,7 +48,7 @@ class McpServerSandboxManager {
 
       // Now pull the base image with the correct socket configured
       log.info('Ensuring base image is available...');
-      await this.podmanRuntime.ensureBaseImageAvailableOnMachineInstallationSuccess(socketPath);
+      await this.podmanRuntime.pullBaseImageOnMachineInstallationSuccess(socketPath);
       log.info('Base image is available');
     } catch (error) {
       log.error('Failed during podman setup:', error);
