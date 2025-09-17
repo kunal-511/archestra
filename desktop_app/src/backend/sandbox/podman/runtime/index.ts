@@ -153,7 +153,11 @@ export default class PodmanRuntime {
   }
 
   async pullBaseImageOnMachineInstallationSuccess(machineSocketPath: string) {
-    await this.baseImage.ensureBaseImageAvailable(machineSocketPath);
+    try {
+      await this.baseImage.ensureBaseImageAvailable(machineSocketPath);
+    } catch (error) {
+      throw error;
+    }
   }
 
   private runCommand<T extends object | object[]>({
