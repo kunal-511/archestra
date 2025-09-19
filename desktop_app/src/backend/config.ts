@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import * as os from 'os';
 
-import { SYSTEM_MODELS } from '../constants';
+import { SYSTEM_MODELS } from '@constants';
 
 const OLLAMA_SERVER_PORT = parseInt(process.env.ARCHESTRA_OLLAMA_SERVER_PORT || '54589', 10);
 const OLLAMA_GUARD_MODEL = SYSTEM_MODELS.GUARD;
@@ -39,6 +39,9 @@ export default {
     websocket: {
       port: parseInt(process.env.ARCHESTRA_WEBSOCKET_SERVER_PORT || '54588', 10),
     },
+  },
+  oauthProxy: {
+    url: process.env.OAUTH_PROXY_URL || 'https://oauth.dev.archestra.ai',
   },
   ollama: {
     server: {
