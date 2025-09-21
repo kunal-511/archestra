@@ -9,12 +9,23 @@ export default defineConfig({
       '@backend': path.resolve(__dirname, './src/backend'),
       '@ui': path.resolve(__dirname, './src/ui'),
     },
+    // For Node.js native modules
+    conditions: ['node'],
+    mainFields: ["module", "jsnext:main", "jsnext"],
   },
   build: {
     rollupOptions: {
       external: ['better-sqlite3'],
     },
   },
+  plugins: [
+    {
+      name: "restart",
+      closeBundle() {
+        process.stdin.emit("data", "rs");
+      },
+    },
+  ],
   test: {
     silent: true, // suppress all console logs from tests
     globals: true,
