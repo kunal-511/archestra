@@ -1733,6 +1733,28 @@
         },
         "required": ["success", "message"]
       },
+      "BackendLogsResponseInput": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "description": "The log content or error message",
+            "type": "string"
+          },
+          "error": {
+            "description": "Error message if failed to read logs",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          }
+        },
+        "required": ["logs", "error"]
+      },
       "UserInput": {
         "type": "object",
         "properties": {
@@ -3553,6 +3575,29 @@
         "required": ["success", "message"],
         "additionalProperties": false
       },
+      "BackendLogsResponse": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "description": "The log content or error message",
+            "type": "string"
+          },
+          "error": {
+            "description": "Error message if failed to read logs",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          }
+        },
+        "required": ["logs", "error"],
+        "additionalProperties": false
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -4344,6 +4389,60 @@
         "responses": {
           "204": {
             "description": "Default Response"
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/{sessionId}/reset-token-usage": {
+      "post": {
+        "operationId": "resetChatTokenUsage",
+        "tags": ["Chat"],
+        "description": "Reset token usage counters for a chat session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "description": "The session ID of the chat"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "additionalProperties": false
+                }
+              }
+            }
           },
           "404": {
             "description": "Default Response",
@@ -5724,9 +5823,41 @@
     },
     "/api/system/backend-logs": {
       "get": {
+        "operationId": "getSystemBackendLogs",
+        "tags": ["System"],
+        "description": "Get backend log file content",
+        "parameters": [
+          {
+            "schema": {
+              "default": "1000",
+              "type": "string"
+            },
+            "in": "query",
+            "name": "lines",
+            "required": false,
+            "description": "Number of lines to return from the end of the log file"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackendLogsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackendLogsResponse"
+                }
+              }
+            }
           }
         }
       }

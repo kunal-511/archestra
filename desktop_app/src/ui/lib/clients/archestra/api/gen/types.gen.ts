@@ -481,6 +481,17 @@ export type SandboxActionResponseInput = {
   message: string;
 };
 
+export type BackendLogsResponseInput = {
+  /**
+   * The log content or error message
+   */
+  logs: string;
+  /**
+   * Error message if failed to read logs
+   */
+  error: string | null;
+};
+
 export type UserInput = {
   id: number;
   uniqueId: string | null;
@@ -972,6 +983,17 @@ export type SandboxActionResponse = {
   message: string;
 };
 
+export type BackendLogsResponse = {
+  /**
+   * The log content or error message
+   */
+  logs: string;
+  /**
+   * Error message if failed to read logs
+   */
+  error: string | null;
+};
+
 export type User = {
   id: number;
   uniqueId: string | null;
@@ -1395,6 +1417,40 @@ export type UpdateChatMessageResponses = {
 };
 
 export type UpdateChatMessageResponse = UpdateChatMessageResponses[keyof UpdateChatMessageResponses];
+
+export type ResetChatTokenUsageData = {
+  body?: never;
+  path: {
+    /**
+     * The session ID of the chat
+     */
+    sessionId: string;
+  };
+  query?: never;
+  url: '/api/chat/{sessionId}/reset-token-usage';
+};
+
+export type ResetChatTokenUsageErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+  };
+};
+
+export type ResetChatTokenUsageError = ResetChatTokenUsageErrors[keyof ResetChatTokenUsageErrors];
+
+export type ResetChatTokenUsageResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    message: string;
+  };
+};
+
+export type ResetChatTokenUsageResponse = ResetChatTokenUsageResponses[keyof ResetChatTokenUsageResponses];
 
 export type GetAvailableCloudProvidersData = {
   body?: never;
@@ -2128,19 +2184,35 @@ export type ResetSandboxResponses = {
 
 export type ResetSandboxResponse = ResetSandboxResponses[keyof ResetSandboxResponses];
 
-export type GetApiSystemBackendLogsData = {
+export type GetSystemBackendLogsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Number of lines to return from the end of the log file
+     */
+    lines?: string;
+  };
   url: '/api/system/backend-logs';
 };
 
-export type GetApiSystemBackendLogsResponses = {
+export type GetSystemBackendLogsErrors = {
   /**
    * Default Response
    */
-  200: unknown;
+  500: BackendLogsResponse;
 };
+
+export type GetSystemBackendLogsError = GetSystemBackendLogsErrors[keyof GetSystemBackendLogsErrors];
+
+export type GetSystemBackendLogsResponses = {
+  /**
+   * Default Response
+   */
+  200: BackendLogsResponse;
+};
+
+export type GetSystemBackendLogsResponse = GetSystemBackendLogsResponses[keyof GetSystemBackendLogsResponses];
 
 export type GetUserData = {
   body?: never;

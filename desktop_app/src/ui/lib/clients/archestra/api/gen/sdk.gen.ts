@@ -35,8 +35,6 @@ import type {
   DisconnectExternalMcpClientResponses,
   GetAllMemoriesData,
   GetAllMemoriesResponses,
-  GetApiSystemBackendLogsData,
-  GetApiSystemBackendLogsResponses,
   GetAvailableCloudProvidersData,
   GetAvailableCloudProvidersResponses,
   GetAvailableToolsData,
@@ -73,6 +71,9 @@ import type {
   GetOllamaRequiredModelsStatusResponses,
   GetSupportedExternalMcpClientsData,
   GetSupportedExternalMcpClientsResponses,
+  GetSystemBackendLogsData,
+  GetSystemBackendLogsErrors,
+  GetSystemBackendLogsResponses,
   GetUserData,
   GetUserResponses,
   InstallMcpServerData,
@@ -87,6 +88,9 @@ import type {
   RemoveOllamaModelData,
   RemoveOllamaModelErrors,
   RemoveOllamaModelResponses,
+  ResetChatTokenUsageData,
+  ResetChatTokenUsageErrors,
+  ResetChatTokenUsageResponses,
   ResetSandboxData,
   ResetSandboxErrors,
   ResetSandboxResponses,
@@ -322,6 +326,18 @@ export const updateChatMessage = <ThrowOnError extends boolean = false>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Reset token usage counters for a chat session
+ */
+export const resetChatTokenUsage = <ThrowOnError extends boolean = false>(
+  options: Options<ResetChatTokenUsageData, ThrowOnError>
+) => {
+  return (options.client ?? _heyApiClient).post<ResetChatTokenUsageResponses, ResetChatTokenUsageErrors, ThrowOnError>({
+    url: '/api/chat/{sessionId}/reset-token-usage',
+    ...options,
   });
 };
 
@@ -729,10 +745,17 @@ export const resetSandbox = <ThrowOnError extends boolean = false>(
   });
 };
 
-export const getApiSystemBackendLogs = <ThrowOnError extends boolean = false>(
-  options?: Options<GetApiSystemBackendLogsData, ThrowOnError>
+/**
+ * Get backend log file content
+ */
+export const getSystemBackendLogs = <ThrowOnError extends boolean = false>(
+  options?: Options<GetSystemBackendLogsData, ThrowOnError>
 ) => {
-  return (options?.client ?? _heyApiClient).get<GetApiSystemBackendLogsResponses, unknown, ThrowOnError>({
+  return (options?.client ?? _heyApiClient).get<
+    GetSystemBackendLogsResponses,
+    GetSystemBackendLogsErrors,
+    ThrowOnError
+  >({
     url: '/api/system/backend-logs',
     ...options,
   });
