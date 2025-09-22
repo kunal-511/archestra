@@ -12,7 +12,7 @@ export default defineConfig({
     },
     // For Node.js native modules
     conditions: ['node'],
-    mainFields: ["module", "jsnext:main", "jsnext"],
+    mainFields: ['module', 'jsnext:main', 'jsnext'],
   },
   build: {
     rollupOptions: {
@@ -21,9 +21,9 @@ export default defineConfig({
   },
   plugins: [
     {
-      name: "restart",
+      name: 'restart',
       closeBundle() {
-        process.stdin.emit("data", "rs");
+        process.stdin.emit('data', 'rs');
       },
     },
   ],
