@@ -10,9 +10,13 @@ export default defineConfig({
       '@constants': path.resolve(__dirname, './src/constants.ts'),
       '@ui': path.resolve(__dirname, './src/ui'),
     },
-    // For Node.js native modules
+    /**
+     * `conditions` and `mainFields` are responsible for backend hot-reloading
+     *
+     * see https://github.com/electron/forge/issues/682#issuecomment-1793552649
+     */
     conditions: ['node'],
-    mainFields: ["module", "jsnext:main", "jsnext"],
+    mainFields: ['module', 'jsnext:main', 'jsnext'],
   },
   build: {
     rollupOptions: {
@@ -20,10 +24,15 @@ export default defineConfig({
     },
   },
   plugins: [
+    /**
+     * The `restart` plugin, configured as such, is responsible for backend hot-reloading
+     *
+     * see https://github.com/electron/forge/issues/682#issuecomment-1793552649
+     */
     {
-      name: "restart",
+      name: 'restart',
       closeBundle() {
-        process.stdin.emit("data", "rs");
+        process.stdin.emit('data', 'rs');
       },
     },
   ],
