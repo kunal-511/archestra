@@ -2,6 +2,7 @@ import { type DynamicToolUIPart, ReasoningUIPart, type TextUIPart, UIMessage } f
 import { Edit2, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import ImageDisplay from '@ui/components/ImageDisplay';
 import ThinkBlock from '@ui/components/ThinkBlock';
 import ToolInvocation from '@ui/components/ToolInvocation';
 import { AIResponse } from '@ui/components/kibo/ai-response';
@@ -9,6 +10,12 @@ import { Button } from '@ui/components/ui/button';
 import { Textarea } from '@ui/components/ui/textarea';
 
 import RegenerationSkeleton from './RegenerationSkeleton';
+
+interface ImageUIPart {
+  type: 'image';
+  image: string;
+  alt?: string;
+}
 
 interface AssistantMessageProps {
   message: UIMessage;
@@ -74,20 +81,23 @@ export default function AssistantMessage({
   // Separate parts by type to ensure proper ordering
   const reasoningParts: ReasoningUIPart[] = [];
   const toolParts: DynamicToolUIPart[] = [];
+  const imageParts: ImageUIPart[] = [];
   let accumulatedText = '';
 
   // First pass: collect and separate parts
-  message.parts.forEach((part) => {
+  message.parts.forEach((part: any) => {
     if (part.type === 'text') {
       accumulatedText += part.text;
     } else if (part.type === 'reasoning') {
       reasoningParts.push(part);
     } else if (part.type === 'dynamic-tool') {
       toolParts.push(part);
+    } else if (part.type === 'image' && part.image) {
+      imageParts.push(part as ImageUIPart);
     }
   });
 
-  // Build ordered elements: reasoning blocks first, then tools, then text
+  // Build ordered elements: reasoning blocks first, then tools, then images, then text
   const orderedElements: React.ReactNode[] = [];
 
   // Add all reasoning blocks first (thinking blocks appear above final message)
@@ -105,6 +115,38 @@ export default function AssistantMessage({
   toolParts.forEach((tool, index) => {
     orderedElements.push(<ToolInvocation key={tool.toolCallId || `tool-${index}`} tool={tool} />);
   });
+
+  // Add images
+  if (imageParts.length > 0) {
+    if (imageParts.length === 1) {
+      // Single image - display larger
+      orderedElements.push(
+        <div key="images" className="my-2">
+          <ImageDisplay
+            src={imageParts[0].image}
+            alt={imageParts[0].alt || 'Generated image'}
+            className="max-w-md"
+          />
+        </div>
+      );
+    } else {
+      // Multiple images - display in a grid
+      orderedElements.push(
+        <div key="images" className="my-2">
+          <div className="grid grid-cols-2 gap-2 max-w-lg">
+            {imageParts.map((image, index) => (
+              <ImageDisplay
+                key={`image-${index}`}
+                src={image.image}
+                alt={image.alt || `Generated image ${index + 1}`}
+                className="w-full"
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+  }
 
   // Add final text content last
   if (accumulatedText.trim()) {

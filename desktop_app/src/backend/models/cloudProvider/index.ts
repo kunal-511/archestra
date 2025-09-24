@@ -12,6 +12,7 @@ const CloudProviderSchema = z.object({
   apiKeyPlaceholder: z.string(),
   baseUrl: z.string().url(),
   models: z.array(z.string()), // Just model IDs
+  imageModels: z.array(z.string()).optional(), // Image generation model IDs
   headers: z.record(z.string(), z.string()).optional(),
 });
 
@@ -35,6 +36,7 @@ export const CloudProviderWithConfigSchema = CloudProviderSchema.extend({
 type CloudProvider = z.infer<typeof CloudProviderSchema>;
 export type CloudProviderWithConfig = z.infer<typeof CloudProviderWithConfigSchema>;
 export type SupportedCloudProvider = z.infer<typeof SupportedCloudProviderSchema>;
+export type SupportedImageGenerationProvider = 'openai' | 'gemini';
 export type SupportedCloudProviderModel = z.infer<typeof SupportedCloudProviderModelSchema>;
 
 // Provider definitions - easy to update in code
@@ -46,6 +48,7 @@ const PROVIDER_REGISTRY: Record<SupportedCloudProvider, CloudProvider> = {
     apiKeyPlaceholder: 'sk-ant-api03-...',
     baseUrl: 'https://api.anthropic.com/v1',
     models: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
+    imageModels: [], // Anthropic doesn't currently support image generation
     headers: {
       'anthropic-version': '2023-06-01',
       'anthropic-beta': 'messages-2023-12-15',
@@ -58,6 +61,7 @@ const PROVIDER_REGISTRY: Record<SupportedCloudProvider, CloudProvider> = {
     apiKeyPlaceholder: 'sk-...',
     baseUrl: 'https://api.openai.com/v1',
     models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    imageModels: ['dall-e-3', 'dall-e-2', 'gpt-image-1'],
   },
   deepseek: {
     type: 'deepseek',
@@ -66,6 +70,7 @@ const PROVIDER_REGISTRY: Record<SupportedCloudProvider, CloudProvider> = {
     apiKeyPlaceholder: 'sk-...',
     baseUrl: 'https://api.deepseek.com/v1',
     models: ['deepseek-chat', 'deepseek-reasoner'],
+    imageModels: [], // DeepSeek doesn't currently support image generation
   },
   gemini: {
     type: 'gemini',
@@ -74,6 +79,7 @@ const PROVIDER_REGISTRY: Record<SupportedCloudProvider, CloudProvider> = {
     apiKeyPlaceholder: 'AIza...',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
     models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-1.5-pro'],
+    imageModels: ['imagen-3.0-generate-002'],
   },
 };
 
@@ -85,6 +91,21 @@ function getProviderForModel(modelId: string): CloudProvider | null {
     }
   }
   return null;
+}
+
+// Helper function to get provider for an image model
+function getProviderForImageModel(modelId: string): CloudProvider | null {
+  for (const provider of Object.values(PROVIDER_REGISTRY)) {
+    if (provider.imageModels?.includes(modelId)) {
+      return provider;
+    }
+  }
+  return null;
+}
+
+// Helper function to check if model supports image generation
+function isImageGenerationModel(modelId: string): boolean {
+  return getProviderForImageModel(modelId) !== null;
 }
 
 export default class CloudProviderModel {
@@ -167,6 +188,38 @@ export default class CloudProviderModel {
     }
 
     return models;
+  }
+
+  static async getAvailableImageModels(): Promise<SupportedCloudProviderModel[]> {
+    const configs = await CloudProviderModel.getAll();
+    const models: SupportedCloudProviderModel[] = [];
+
+    for (const config of configs) {
+      if (!config.enabled) continue;
+
+      const definition = PROVIDER_REGISTRY[config.providerType];
+      if (!definition || !definition.imageModels) continue;
+
+      for (const modelId of definition.imageModels) {
+        models.push({ id: modelId, provider: config.providerType });
+      }
+    }
+
+    return models;
+  }
+
+  static async getProviderConfigForImageModel(modelId: string): Promise<{ provider: CloudProvider; apiKey: string } | null> {
+    const provider = getProviderForImageModel(modelId);
+    if (!provider) return null;
+
+    const config = await CloudProviderModel.getByType(provider.type);
+    if (!config || !config.enabled) return null;
+
+    return { provider, apiKey: config.apiKey };
+  }
+
+  static isImageGenerationModel(modelId: string): boolean {
+    return isImageGenerationModel(modelId);
   }
 }
 

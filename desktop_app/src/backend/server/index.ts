@@ -8,6 +8,7 @@ import chatRoutes from '@backend/server/plugins/chat';
 import cloudProviderRoutes from '@backend/server/plugins/cloudProviders';
 import externalMcpClientRoutes from '@backend/server/plugins/externalMcpClient';
 import genericOAuthRoutes from '@backend/server/plugins/generic-oauth';
+import imageGenerationRoutes from '@backend/server/plugins/imageGeneration';
 import llmRoutes from '@backend/server/plugins/llm';
 import archestraMcpServerPlugin from '@backend/server/plugins/mcp';
 import mcpRequestLogRoutes from '@backend/server/plugins/mcpRequestLog';
@@ -55,6 +56,7 @@ export const startFastifyServer = async () => {
   await app.register(cloudProviderRoutes);
   await app.register(externalMcpClientRoutes);
   await app.register(genericOAuthRoutes);
+  await app.register(imageGenerationRoutes);
   await app.register(llmRoutes);
   await app.register(mcpRequestLogRoutes);
   await app.register(mcpServerRoutes);

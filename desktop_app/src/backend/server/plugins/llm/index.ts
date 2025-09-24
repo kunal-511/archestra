@@ -5,12 +5,15 @@ import { createOpenAI, openai } from '@ai-sdk/openai';
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
 import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { createOllama } from 'ollama-ai-provider-v2';
+import { z } from 'zod';
 
 import ollamaClient from '@backend/clients/ollama';
 import config from '@backend/config';
 import Chat from '@backend/models/chat';
 import CloudProviderModel from '@backend/models/cloudProvider';
 import { archestraMcpContext } from '@backend/server/plugins/mcp';
+import { ErrorResponseSchema, DetailedErrorResponseSchema } from '@backend/schemas';
+import ImageGenerationService from '@backend/services/imageGeneration';
 import toolService from '@backend/services/tool';
 import { type McpTools } from '@backend/types';
 
@@ -26,6 +29,45 @@ interface StreamRequestBody {
   toolChoice?: 'auto' | 'none' | 'required' | { type: 'tool'; toolName: string };
   chatId?: number; // Chat ID to get chat-specific tools
 }
+
+interface ImageGenerationRequestBody {
+  model: string;
+  prompt: string;
+  provider?: string;
+  size?: string;
+  aspectRatio?: string;
+  n?: number;
+  seed?: number;
+  providerOptions?: Record<string, any>;
+  sessionId?: string;
+  chatId?: number;
+}
+
+const ImageGenerationRequestSchema = z.object({
+  model: z.string().describe('The image model to use for generation'),
+  prompt: z.string().min(1).describe('The text prompt for image generation'),
+  provider: z.string().optional().describe('Override provider (e.g., "openai", "gemini")'),
+  size: z.string().optional().describe('Image size in format "widthxheight" (e.g., "1024x1024")'),
+  aspectRatio: z.string().optional().describe('Aspect ratio in format "width:height" (e.g., "16:9")'),
+  n: z.number().int().min(1).max(10).default(1).describe('Number of images to generate'),
+  seed: z.number().int().optional().describe('Seed for reproducible generation'),
+  providerOptions: z.record(z.string(), z.any()).optional().describe('Provider-specific options'),
+  sessionId: z.string().optional().describe('Session ID for tracking'),
+  chatId: z.number().int().optional().describe('Chat ID to associate with'),
+});
+
+const ImageGenerationResponseSchema = z.object({
+  images: z.array(z.object({
+    base64: z.string().describe('Base64 encoded image data'),
+    dataUrl: z.string().describe('Data URL format for display'),
+  })).describe('Generated images'),
+  warnings: z.array(z.string()).optional().describe('Any warnings from the generation process'),
+  providerMetadata: z.record(z.string(), z.any()).optional().describe('Provider-specific metadata'),
+});
+
+// Register schemas for OpenAPI
+z.globalRegistry.add(ImageGenerationRequestSchema, { id: 'LlmImageGenerationRequest' });
+z.globalRegistry.add(ImageGenerationResponseSchema, { id: 'LlmImageGenerationResponse' });
 
 const { vercelSdk: vercelSdkConfig } = sharedConfig;
 
@@ -189,6 +231,121 @@ const llmRoutes: FastifyPluginAsync = async (fastify) => {
         fastify.log.error('LLM streaming error:', error instanceof Error ? error.stack || error.message : error);
         return reply.code(500).send({
           error: 'Failed to stream response',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+  );
+
+  // Image generation endpoint
+  fastify.post<{ Body: ImageGenerationRequestBody }>(
+    '/api/llm/generate-image',
+    {
+      schema: {
+        operationId: 'generateImageLlm',
+        description: 'Generate images using LLM-integrated image models',
+        tags: ['LLM', 'Image Generation'],
+        body: ImageGenerationRequestSchema,
+        response: {
+          200: ImageGenerationResponseSchema,
+          400: DetailedErrorResponseSchema,
+          500: DetailedErrorResponseSchema,
+        },
+      },
+    },
+    async (request: FastifyRequest<{ Body: ImageGenerationRequestBody }>, reply: FastifyReply) => {
+      const { model, prompt, provider, size, aspectRatio, n, seed, providerOptions, sessionId, chatId } = request.body;
+
+      try {
+        // Validate that the model supports image generation
+        if (!ImageGenerationService.isImageGenerationModel(model)) {
+          return reply.status(400).send({
+            error: 'Invalid model for image generation',
+            details: `Model ${model} does not support image generation. Use /api/image-generation/models/available to see supported models.`,
+          });
+        }
+
+        // Validate the image generation request
+        const validation = ImageGenerationService.validateImageGenerationRequest({
+          model,
+          prompt,
+          provider,
+          size,
+          aspectRatio,
+          n,
+          seed,
+          providerOptions,
+        });
+
+        if (!validation.valid) {
+          return reply.status(400).send({
+            error: 'Invalid image generation request',
+            details: validation.errors.join(', '),
+          });
+        }
+
+        // Generate the images
+        const result = await ImageGenerationService.generateImage({
+          model,
+          prompt,
+          provider,
+          size,
+          aspectRatio,
+          n,
+          seed,
+          providerOptions,
+        });
+
+        // Convert images to data URLs for easier display
+        const imagesWithDataUrls = result.images.map((img) => ({
+          base64: img.base64,
+          dataUrl: `data:image/png;base64,${img.base64}`,
+        }));
+
+        // Save the generation result to chat if sessionId provided
+        if (sessionId) {
+          // Create a synthetic message representing the image generation
+          const imageMessage: any = {
+            id: `img-${Date.now()}`,
+            role: 'assistant' as const,
+            parts: [
+              {
+                type: 'text' as const,
+                text: `Generated ${imagesWithDataUrls.length} image${imagesWithDataUrls.length > 1 ? 's' : ''} for: "${prompt}"`,
+              },
+              ...imagesWithDataUrls.map((img, index) => ({
+                type: `data-image-${index}` as const,
+                id: `image-${index}`,
+                data: {
+                  type: 'image',
+                  image: img.dataUrl,
+                  alt: `Generated image ${index + 1}: ${prompt}`,
+                },
+              })),
+            ],
+          };
+
+          // Save the user's prompt and the generated image as messages
+          const userMessage: any = {
+            id: `user-${Date.now()}`,
+            role: 'user' as const,
+            parts: [{ type: 'text' as const, text: prompt }],
+          };
+
+          await Chat.saveMessages(sessionId, [userMessage, imageMessage]);
+        }
+
+        const response = {
+          images: imagesWithDataUrls,
+          warnings: result.warnings,
+          providerMetadata: result.providerMetadata,
+        };
+
+        return reply.code(200).send(response);
+      } catch (error) {
+        fastify.log.error('Image generation error:', error instanceof Error ? error.stack || error.message : error);
+        return reply.status(500).send({
+          error: 'Failed to generate image',
           details: error instanceof Error ? error.message : 'Unknown error',
         });
       }
