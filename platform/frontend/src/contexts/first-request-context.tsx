@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useChats } from "@/lib/chat.query";
+import { useInteractions } from "@/lib/interaction.query";
 
 interface FirstRequestContextValue {
   hasReceivedFirstRequest: boolean;
@@ -21,19 +21,16 @@ const FirstRequestContext = createContext<FirstRequestContextValue | undefined>(
 export function FirstRequestProvider({ children }: { children: ReactNode }) {
   const [hasReceivedFirstRequest, setHasReceivedFirstRequest] = useState(false);
 
-  // Check if there are any chats/interactions already
-  const { data: chats = [] } = useChats({ initialData: [] });
+  // Check if there are any interactions already
+  const { data: interactions = [] } = useInteractions({ initialData: [] });
 
   useEffect(() => {
-
-    const hasInteractions = chats?.some(
-      (chat) => chat.interactions && chat.interactions.length > 0,
-    );
+    const hasInteractions = interactions && interactions.length > 0;
 
     if (hasInteractions && !hasReceivedFirstRequest) {
       setHasReceivedFirstRequest(true);
     }
-  }, [chats, hasReceivedFirstRequest]);
+  }, [interactions, hasReceivedFirstRequest]);
 
   const markFirstRequestReceived = () => {
     setHasReceivedFirstRequest(true);
