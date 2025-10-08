@@ -25,7 +25,6 @@ export function FirstRequestProvider({ children }: { children: ReactNode }) {
   const { data: chats = [] } = useChats({ initialData: [] });
 
   useEffect(() => {
-    if (!chats) return;
 
     const hasInteractions = chats.some(
       (chat) => chat.interactions && chat.interactions.length > 0,
