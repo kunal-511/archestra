@@ -6,7 +6,9 @@ import { ArchestraQueryClientProvider } from "./_parts/query-client-provider";
 import { AppSidebar } from "./_parts/sidebar";
 import { ThemeProvider } from "./_parts/theme-provider";
 import "./globals.css";
+import { FirstRequestGate } from "@/components/first-request-gate";
 import { Toaster } from "@/components/ui/sonner";
+import { FirstRequestProvider } from "@/contexts/first-request-context";
 
 const mainFont = Lato({
   subsets: ["latin"],
@@ -34,19 +36,23 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ArchestraQueryClientProvider>
-            <SidebarProvider>
-              <AppSidebar />
-              <main className="h-[100%] w-full overflow-auto">
-                <div className="h-8">
-                  <SidebarTrigger className="cursor-pointer" />
-                  <div className="absolute top-0 right-0">
-                    <ColorModeToggle />
-                  </div>
-                </div>
-                {children}
-              </main>
-              <Toaster />
-            </SidebarProvider>
+            <FirstRequestProvider>
+              <FirstRequestGate>
+                <SidebarProvider>
+                  <AppSidebar />
+                  <main className="h-[100%] w-full overflow-auto">
+                    <div className="h-8">
+                      <SidebarTrigger className="cursor-pointer" />
+                      <div className="absolute top-0 right-0">
+                        <ColorModeToggle />
+                      </div>
+                    </div>
+                    {children}
+                  </main>
+                  <Toaster />
+                </SidebarProvider>
+              </FirstRequestGate>
+            </FirstRequestProvider>
           </ArchestraQueryClientProvider>
         </ThemeProvider>
       </body>
