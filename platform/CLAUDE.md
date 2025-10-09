@@ -123,6 +123,7 @@ platform/
 ├── frontend/          # Next.js web application
 │   └── src/
 │       └── app/       # Next.js App Router pages
+│           └── agents/  # Agent management UI (create, edit, delete agents)
 ├── experiments/       # Experimental features and prototypes
 │   └── src/
 │       ├── main.ts              # OpenAI proxy server (port 9000)
@@ -154,6 +155,8 @@ The production backend provides:
   - Interactions are linked directly to agents (chat model has been removed)
 - **LLM Integration**:
   - `POST /v1/:provider/chat/completions` - OpenAI-compatible chat endpoint
+  - `POST /v1/openai/chat/completions` - Default agent endpoint (creates/uses agent based on user-agent header)
+  - `POST /v1/openai/:agentId/chat/completions` - Agent-specific endpoint for multi-agent scenarios
   - `GET /v1/:provider/models` - List available models for a provider
   - Supports streaming responses for real-time AI interactions
 - **Agent Management**:
@@ -275,7 +278,11 @@ The `platform/examples/` directory contains example integrations:
 - **pydantic-ai**: Python CLI chat agent showing Pydantic AI integration with Archestra's security layer
   - Demonstrates autonomous agent with file reading and GitHub issue fetching capabilities
   - Shows how Archestra prevents prompt injection attacks from untrusted sources
-  - Includes `--secure` flag to toggle between direct OpenAI (vulnerable) and Archestra proxy (protected)
+  - Includes `--secure` flag to toggle between direct LLM (vulnerable) and Archestra proxy (protected)
+  - Supports multiple LLM providers:
+    - OpenAI (default): Uses `gpt-4o` by default, configurable via `MODEL_NAME`
+    - Anthropic: Uses `claude-sonnet-4-5-20250929` by default, configurable via `MODEL_NAME`
+    - Provider selection via `LLM_PROVIDER` environment variable (`openai` or `anthropic`)
   - Example uses GitHub issue #669 which contains a hidden prompt injection attack
 
 Each example includes a README with setup instructions and demonstrates how to use Archestra Platform as a security proxy for LLM applications.
