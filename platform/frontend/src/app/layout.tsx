@@ -1,3 +1,4 @@
+import { getInteractions } from "@shared/api-client";
 import type { Metadata } from "next";
 import { Lato } from "next/font/google";
 import { ColorModeToggle } from "@/components/color-mode-toggle";
@@ -21,11 +22,19 @@ export const metadata: Metadata = {
   description: "Enterprise MCP Platform for AI Agents",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let hasFirstRequest = false;
+  try {
+    const response = await getInteractions();
+    hasFirstRequest = (response.data?.length ?? 0) > 0;
+  } catch (error) {
+    console.error("Failed to fetch interactions:", error);
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${mainFont.className} antialiased`}>
@@ -36,7 +45,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ArchestraQueryClientProvider>
-            <FirstRequestProvider>
+            <FirstRequestProvider initialValue={hasFirstRequest}>
               <FirstRequestGate>
                 <SidebarProvider>
                   <AppSidebar />

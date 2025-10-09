@@ -18,10 +18,19 @@ const FirstRequestContext = createContext<FirstRequestContextValue | undefined>(
   undefined,
 );
 
-export function FirstRequestProvider({ children }: { children: ReactNode }) {
-  const [hasReceivedFirstRequest, setHasReceivedFirstRequest] = useState(false);
+interface FirstRequestProviderProps {
+  children: ReactNode;
+  initialValue?: boolean;
+}
 
-  // Check if there are any interactions already
+export function FirstRequestProvider({
+  children,
+  initialValue = false,
+}: FirstRequestProviderProps) {
+  const [hasReceivedFirstRequest, setHasReceivedFirstRequest] =
+    useState(initialValue);
+
+  // Keep checking interactions in real-time to update state
   const { data: interactions = [] } = useInteractions({ initialData: [] });
 
   useEffect(() => {
